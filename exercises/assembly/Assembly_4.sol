@@ -4,7 +4,7 @@ contract Scope {
     uint256 public count = 10;
 
     function increment(uint256 num) public {
-        // Modify state of the count from within
+        // Modify state of the count variable from within
         // the assembly segment
         assembly {
 
