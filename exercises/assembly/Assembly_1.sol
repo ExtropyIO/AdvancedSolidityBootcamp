@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.4;
 
 contract Intro {
@@ -12,6 +13,9 @@ contract Intro {
             // To return it needs to be stored in memory
             // with command mstore(MEMORY_LOCATION, STACK_VARIABLE)
             // to return you need to specify address and the size from the starting point
+            let assemblyMol := mol
+            mstore(0x80, assemblyMol)
+            return(0x80, 32)
         }
     }
 }

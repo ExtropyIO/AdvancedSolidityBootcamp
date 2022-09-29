@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.4;
 
 contract Add {
@@ -9,10 +10,11 @@ contract Add {
         // and return the result from the second block
         assembly {
             let result := add(x, y)
+            mstore(0x80, result)
         }
 
         assembly {
-            return()
+            return(0x80, 32)
         }
     }
 }

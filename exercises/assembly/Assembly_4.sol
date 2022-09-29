@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.4;
 
 contract Scope {
@@ -7,7 +8,8 @@ contract Scope {
         // Modify state of the count variable from within
         // the assembly segment
         assembly {
-
+            let countTemp := sload(count.slot)
+            sstore(count.slot, add(countTemp, num))
         }
     }
 }
