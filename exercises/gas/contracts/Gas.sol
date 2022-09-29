@@ -60,9 +60,10 @@ contract GasContract is Ownable, Constants {
 
     modifier onlyAdminOrOwner() {
         address senderOfTx = msg.sender;
-        if (checkForAdmin(senderOfTx)) {
+        bool isAdmin = checkForAdmin(senderOfTx);
+        if (isAdmin) {
             require(
-                checkForAdmin(senderOfTx),
+                isAdmin,
                 "Gas Contract Only Admin Check-  Caller not admin"
             );
             _;
@@ -132,14 +133,13 @@ contract GasContract is Ownable, Constants {
         return paymentHistory;
     }
 
-    function checkForAdmin(address _user) public view returns (bool admin_) {
-        bool admin = false;
+    function checkForAdmin(address _user) public view returns (bool) {
         for (uint256 ii = 0; ii < administrators.length; ii++) {
             if (administrators[ii] == _user) {
-                admin = true;
+                return true;
             }
         }
-        return admin;
+        return false;
     }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
