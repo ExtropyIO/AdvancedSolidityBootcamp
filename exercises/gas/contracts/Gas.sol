@@ -166,11 +166,7 @@ contract GasContract is Ownable, Constants {
         history.lastUpdate = block.timestamp;
         history.updatedBy = _updateAddress;
         paymentHistory.push(history);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return ((status[0] == true), _tradeMode);
+        return (tradePercent > 0, _tradeMode);
     }
 
     function getPayments(address _user)
@@ -211,11 +207,7 @@ contract GasContract is Ownable, Constants {
         payment.recipientName = _name;
         payment.paymentID = ++paymentCounter;
         payments[senderOfTx].push(payment);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return (status[0] == true);
+        return (tradePercent > 0);
     }
 
     function updatePayment(
