@@ -84,25 +84,11 @@ contract GasContract is Ownable {
     );
     event WhiteListTransfer(address indexed);
 
-    constructor(address[] memory _admins, uint256 _totalSupply) {
+    constructor(address[5] memory _admins, uint256 _totalSupply) {        
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
-
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (_admins[ii] != address(0)) {
-                administrators[ii] = _admins[ii];
-                if (_admins[ii] == contractOwner) {
-                    balances[contractOwner] = _totalSupply;
-                } else {
-                    balances[_admins[ii]] = 0;
-                }
-                if (_admins[ii] == contractOwner) {
-                    emit supplyChanged(_admins[ii], _totalSupply);
-                } else if (_admins[ii] != contractOwner) {
-                    emit supplyChanged(_admins[ii], 0);
-                }
-            }
-        }
+        administrators = _admins;
+        balances[contractOwner] = _totalSupply;    
     }
 
     function getPaymentHistory()
