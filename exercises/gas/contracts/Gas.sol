@@ -210,25 +210,11 @@ contract GasContract is Ownable {
         }
     }
 
-    function addToWhitelist(address _userAddrs, uint256 _tier)
+    function addToWhitelist(address _userAddrs, uint8 _tier)
         public
         onlyAdminOrOwner
     {
-        require(
-            _tier < 255,
-            "Gas Contract - addToWhitelist function -  tier level should not be greater than 255"
-        );
-        whitelist[_userAddrs] = _tier;
-        if (_tier > 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 3;
-        } else if (_tier == 1) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 1;
-        } else if (_tier > 0 && _tier < 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 2;
-        }
+        whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
         wasLastOdd = !wasLastOdd;
         isOddWhitelistUser[_userAddrs] = wasLastOdd ? 1 : 0;
         emit AddedToWhitelist(_userAddrs, _tier);
