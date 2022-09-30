@@ -4,7 +4,7 @@
 2. Run ` npm i` to install the dependencies
 3. Run ` npx hardhat test` to run the tests and get a gas usage report
 
-![](https://imgur.com/a/GWj9Fqb)
+![Image of Gas Usage](https://imgur.com/a/GWj9Fqb?raw=true)
 
 If you prefer to use a different IDE, you may, but you will need to make sure the contract passes the same tests.
 
