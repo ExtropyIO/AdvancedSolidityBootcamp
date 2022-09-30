@@ -11,7 +11,7 @@ contract GasContract is Ownable {
     address public contractOwner;
     address[5] public administrators;
 
-    uint256 wasLastOdd = 1;
+    bool wasLastOdd = true;
 
     mapping(address => uint256) public balances;
     mapping(address => Payment[]) public payments;
@@ -103,8 +103,7 @@ contract GasContract is Ownable {
     }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
-        uint256 balance = balances[_user];
-        return balance;
+        return balances[_user];
     }
 
     function getTradingMode() public pure returns (bool mode_) {
@@ -230,16 +229,8 @@ contract GasContract is Ownable {
             whitelist[_userAddrs] -= _tier;
             whitelist[_userAddrs] = 2;
         }
-        uint256 wasLastAddedOdd = wasLastOdd;
-        if (wasLastAddedOdd == 1) {
-            wasLastOdd = 0;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        } else if (wasLastAddedOdd == 0) {
-            wasLastOdd = 1;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        } else {
-            revert("Contract hacked, imposible, call help");
-        }
+        wasLastOdd = !wasLastOdd;
+        isOddWhitelistUser[_userAddrs] = wasLastOdd ? 1 : 0;
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
