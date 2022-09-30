@@ -61,13 +61,8 @@ contract GasContract is Ownable {
         _;
     }
 
-    modifier checkIfWhiteListed(address sender) {
-        address senderOfTx = msg.sender;
-        require(
-            senderOfTx == sender,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        );
-        uint256 usersTier = whitelist[senderOfTx];
+    modifier checkIfWhiteListed() {
+        uint256 usersTier = whitelist[msg.sender];
         require(
             usersTier > 0,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
@@ -273,7 +268,7 @@ contract GasContract is Ownable {
         address _recipient,
         uint256 _amount,
         ImportantStruct memory _struct
-    ) public checkIfWhiteListed(msg.sender) {
+    ) public checkIfWhiteListed() {
         address senderOfTx = msg.sender;
         require(
             balances[senderOfTx] >= _amount,
