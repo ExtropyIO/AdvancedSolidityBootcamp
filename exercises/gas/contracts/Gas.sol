@@ -4,16 +4,24 @@ pragma solidity 0.8.0;
 import "./Ownable.sol";
 
 contract GasContract is Ownable {
+    uint256 constant tradePercent = 12;
     uint256 public immutable totalSupply; // cannot be updated
-    uint256 public paymentCounter = 0;
-    mapping(address => uint256) public balances;
-    uint256 public tradePercent = 12;
+
+    uint256 public paymentCounter;
     address public contractOwner;
-    uint256 public tradeMode = 0;
+    address[5] public administrators;
+
+    uint256 wasLastOdd = 1;
+
+    mapping(address => uint256) public balances;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
-    address[5] public administrators;
-    bool public isReady = false;
+    mapping(address => uint256) public isOddWhitelistUser;
+    mapping(address => ImportantStruct) public whiteListStruct;
+    
+    PaymentType constant defaultPayment = PaymentType.Unknown;
+    History[] public paymentHistory; // when a payment was updated
+    
     enum PaymentType {
         Unknown,
         BasicPayment,
@@ -21,9 +29,6 @@ contract GasContract is Ownable {
         Dividend,
         GroupPayment
     }
-    PaymentType constant defaultPayment = PaymentType.Unknown;
-
-    History[] public paymentHistory; // when a payment was updated
 
     struct Payment {
         PaymentType paymentType;
@@ -40,15 +45,11 @@ contract GasContract is Ownable {
         address updatedBy;
         uint256 blockNumber;
     }
-    uint256 wasLastOdd = 1;
-    mapping(address => uint256) public isOddWhitelistUser;
     struct ImportantStruct {
         uint256 valueA; // max 3 digits
         uint256 bigValue;
         uint256 valueB; // max 3 digits
     }
-
-    mapping(address => ImportantStruct) public whiteListStruct;
 
     event AddedToWhitelist(address userAddress, uint256 tier);
 
