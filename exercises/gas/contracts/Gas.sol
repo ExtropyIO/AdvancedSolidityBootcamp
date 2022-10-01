@@ -3,6 +3,16 @@ pragma solidity 0.8.4;
 
 import "./Ownable.sol";
 
+error Unauthorized();
+error SenderInsufficientBalance(uint256 balance, uint256 minRequired);
+error RecipientNameTooLong();
+error AmountToSendTooLow(uint256 sent, uint256 minRequired);
+error InvalidAmount(uint256 sent, uint256 minRequired);
+error InvalidId(uint256 sent, uint256 minRequired);
+error InvalidUserAddress(address userAddress);
+error UserNotWhitelisted();
+error InvalidUserTier(uint256 tier, uint256 maxAllowedTier);
+
 contract GasContract {
     uint256 constant tradePercent = 12;
 
@@ -83,14 +93,13 @@ contract GasContract {
         uint256 _amount,
         string calldata _name
     ) external {
-        require(
-            balances[msg.sender] >= _amount,
-            "Gas Contract - Transfer function - Sender has insufficient Balance"
-        );
-        require(
-            bytes(_name).length < 9,
-            "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        );
+        if (balances[msg.sender] < _amount) {
+            revert SenderInsufficientBalance(balances[msg.sender], _amount);
+        }
+        if (bytes(_name).length >= 9) {
+            revert RecipientNameTooLong();
+        }
+
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
 
@@ -125,15 +134,15 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         ImportantStruct calldata _struct
-    ) external checkIfWhiteListed() {
-        require(
-            balances[msg.sender] >= _amount,
-            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
-        require(
-            _amount > 3,
-            "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
-        );
+    ) external 
+      checkIfWhiteListed 
+    {
+        if (balances[msg.sender] < _amount) {
+            revert SenderInsufficientBalance(balances[msg.sender], _amount);
+        }
+        if (_amount <= 3) {
+            revert AmountToSendTooLow(_amount, 4);
+        }
         uint256 total = _amount - whitelist[msg.sender]; 
         balances[msg.sender] -= total;
         balances[_recipient] += total;
@@ -147,18 +156,15 @@ contract GasContract {
         uint256 _amount,
         PaymentType _type
     ) external onlyAdminOrOwner {
-        require(
-            _ID > 0,
-            "Gas Contract - Update Payment function - ID must be greater than 0"
-        );
-        require(
-            _amount > 0,
-            "Gas Contract - Update Payment function - Amount must be greater than 0"
-        );
-        require(
-            _user != address(0),
-            "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-        );
+        if (_ID == 0) {
+            revert InvalidId(_ID, 1);
+        }
+        if (_amount == 0) {
+            revert InvalidAmount(_amount, 1);
+        }
+        if (_user == address(0)) {
+            revert InvalidUserAddress(_user);
+        }
 
         Payment[] storage userPayments = payments[_user];
         for (uint256 i = 0; i < userPayments.length; i++) {
@@ -185,10 +191,9 @@ contract GasContract {
         view
         returns (Payment[] memory payments_)
     {
-        require(
-            _user != address(0),
-            "Gas Contract - getPayments function - User must have a valid non zero address"
-        );
+        if (_user == address(0)) {
+            revert InvalidUserAddress(_user);
+        }
         return payments[_user];
     }
     
@@ -196,25 +201,20 @@ contract GasContract {
         return true;
     }
 
-    function onlyAdminOrOwnerLogic() private {
+    function onlyAdminOrOwnerLogic() private view {
         if (msg.sender != contractOwner || !checkForAdmin(msg.sender)) {
-            require(
-                msg.sender == contractOwner || checkForAdmin(msg.sender),
-                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-            );
+            revert Unauthorized();
         }
     }
 
-    function checkIfWhiteListedLogic() private {
+    function checkIfWhiteListedLogic() private view {
         uint256 usersTier = whitelist[msg.sender];
-        require(
-            usersTier > 0,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        );
+        if (usersTier == 0) {
+            revert UserNotWhitelisted();
+        }
+        if (usersTier > 3) {
+            revert InvalidUserTier(usersTier, 3);
+        }
     }
     
     function addHistory(address _updateAddress, bool _tradeMode)
