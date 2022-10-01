@@ -232,10 +232,11 @@ contract GasContract {
 
     function checkForAdmin(address _user) private view returns (bool admin_) {
         address[5] memory administratorsTemp = administrators;
-        for (uint256 i = 0; i < administratorsTemp.length; i++) {
+        for (uint256 i = 0; i < 5;) {
             if (administratorsTemp[i] == _user) {
                 return true;
             }
+            unchecked{ i++; }
         }
         return false;
     }    
