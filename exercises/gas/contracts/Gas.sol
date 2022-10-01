@@ -14,9 +14,8 @@ contract GasContract {
     mapping(address => uint256) public whitelist;
     mapping(address => Payment[]) private payments;
     uint256 private paymentCounter;
-    mapping(address => uint256) private balances;
     
-    History[] private paymentHistory; // when a payment was updated
+    mapping(address => uint256) private balances;
     
     enum PaymentType {
         Unknown,
@@ -48,15 +47,7 @@ contract GasContract {
         uint256 valueB; // max 3 digits
     }
 
-    event AddedToWhitelist(address indexed userAddress, uint256 indexed tier);
     event Transfer(address indexed recipient, uint256 indexed amount);
-    event PaymentUpdated(
-        address indexed admin,
-        uint256 indexed ID,
-        uint256 indexed amount,
-        string recipient
-    );
-    event WhiteListTransfer(address indexed recipient);
 
     constructor(address[5] memory _admins, uint256 _totalSupply) {        
         contractOwner = msg.sender;
@@ -96,7 +87,6 @@ contract GasContract {
         external
     {
         whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
-        emit AddedToWhitelist(_userAddrs, _tier);
     }
 
     function whiteTransfer(
@@ -107,8 +97,6 @@ contract GasContract {
         uint256 total = _amount - whitelist[msg.sender]; 
         balances[msg.sender] -= total;
         balances[_recipient] += total;
-
-        emit WhiteListTransfer(_recipient);
     }
     
     function updatePayment(
@@ -128,14 +116,6 @@ contract GasContract {
                 userPayments[i].admin = _user;
                 userPayments[i].paymentType = _type;
                 userPayments[i].amount = _amount;
-
-                addHistory(_user, getTradingMode());
-                emit PaymentUpdated(
-                    msg.sender,
-                    _ID,
-                    _amount,
-                    userPayments[i].recipientName
-                );
                 break;
             }
             unchecked { i++; }
@@ -150,16 +130,8 @@ contract GasContract {
         return payments[_user];
     }
     
-    function getTradingMode() public pure returns (bool mode_) {
+    function getTradingMode() external pure returns (bool mode_) {
         return true;
-    }
-    
-    function addHistory(address _updateAddress, bool _tradeMode)
-        private
-        returns (bool status_, bool tradeMode_)
-    {
-        paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
-        return (true, _tradeMode);
     }
 
     function isAdmin(address _user) private view returns (bool admin_) {
