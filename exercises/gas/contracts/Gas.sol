@@ -107,8 +107,6 @@ contract GasContract {
         Payment[] storage userPayments = payments[_user];
         for (uint256 i = 0; i < userPayments.length;) {
             if (userPayments[i].paymentID == _ID) {
-                userPayments[i].adminUpdated = true;
-                userPayments[i].admin = _user;
                 userPayments[i].paymentType = _type;
                 userPayments[i].amount = _amount;
                 break;
