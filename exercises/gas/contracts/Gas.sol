@@ -217,8 +217,7 @@ contract GasContract {
     }
 
     function isSenderWhiteListedLogic() private view {
-        uint256 usersTier = whitelist[msg.sender];
-        if (usersTier == 0) {
+        if (whitelist[msg.sender] == 0) {
             revert UserNotWhitelisted();
         }
     }
