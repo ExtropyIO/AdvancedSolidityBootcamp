@@ -114,16 +114,8 @@ contract GasContract {
         public
         returns (bool status_, bool tradeMode_)
     {
-        History memory history;
-        history.blockNumber = block.number;
-        history.lastUpdate = block.timestamp;
-        history.updatedBy = _updateAddress;
-        paymentHistory.push(history);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return ((status[0] == true), _tradeMode);
+        paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
+        return (true, _tradeMode);
     }
 
     function getPayments(address _user)
