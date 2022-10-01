@@ -134,7 +134,7 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         string calldata _name
-    ) public returns (bool status_) {
+    ) public {
         require(
             balances[msg.sender] >= _amount,
             "Gas Contract - Transfer function - Sender has insufficient Balance"
@@ -145,19 +145,18 @@ contract GasContract {
         );
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
+
+        payments[msg.sender].push(Payment({
+            paymentType: PaymentType.BasicPayment,
+            paymentID: ++paymentCounter,
+            amount: _amount,
+            recipientName: _name,
+            recipient: _recipient,
+            admin: address(0),
+            adminUpdated: false
+        }));
+        
         emit Transfer(_recipient, _amount);
-        Payment memory payment;
-        payment.paymentType = PaymentType.BasicPayment;
-        payment.recipient = _recipient;
-        payment.amount = _amount;
-        payment.recipientName = _name;
-        payment.paymentID = ++paymentCounter;
-        payments[msg.sender].push(payment);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return (status[0] == true);
     }
 
     function updatePayment(
