@@ -6,20 +6,19 @@ import "./Ownable.sol";
 contract GasContract {
     uint256 constant tradePercent = 12;
     uint256 public immutable totalSupply; // cannot be updated
-
-    uint256 public paymentCounter;
-    address public contractOwner;
     address[5] public administrators;
 
-    bool wasLastOdd = true;
-
-    mapping(address => uint256) public balances;
+    uint256 private paymentCounter;
+    address private contractOwner;
+    bool private wasLastOdd = true;
+    
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
-    mapping(address => uint256) public isOddWhitelistUser;
+
+    mapping(address => uint256) private balances;
+    mapping(address => uint256) private isOddWhitelistUser;
     
-    PaymentType constant defaultPayment = PaymentType.Unknown;
-    History[] public paymentHistory; // when a payment was updated
+    History[] private paymentHistory; // when a payment was updated
     
     enum PaymentType {
         Unknown,
@@ -91,7 +90,7 @@ contract GasContract {
         balances[contractOwner] = _totalSupply;    
     }
 
-    function checkForAdmin(address _user) public view returns (bool admin_) {
+    function checkForAdmin(address _user) internal view returns (bool admin_) {
         uint256 i;
         address[5] memory administratorsTemp = administrators;
         for (i; i < administratorsTemp.length; i++) {
@@ -102,7 +101,7 @@ contract GasContract {
         return false;
     }
 
-    function balanceOf(address _user) public view returns (uint256 balance_) {
+    function balanceOf(address _user) external view returns (uint256 balance_) {
         return balances[_user];
     }
 
@@ -119,7 +118,7 @@ contract GasContract {
     }
 
     function getPayments(address _user)
-        public
+        external
         view
         returns (Payment[] memory payments_)
     {
@@ -134,7 +133,7 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         string calldata _name
-    ) public {
+    ) external {
         require(
             balances[msg.sender] >= _amount,
             "Gas Contract - Transfer function - Sender has insufficient Balance"
@@ -164,7 +163,7 @@ contract GasContract {
         uint256 _ID,
         uint256 _amount,
         PaymentType _type
-    ) public onlyAdminOrOwner {
+    ) external onlyAdminOrOwner {
         require(
             _ID > 0,
             "Gas Contract - Update Payment function - ID must be greater than 0"
@@ -199,7 +198,7 @@ contract GasContract {
     }
 
     function addToWhitelist(address _userAddrs, uint8 _tier)
-        public
+        external
         onlyAdminOrOwner
     {
         whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
@@ -212,7 +211,7 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         ImportantStruct calldata _struct
-    ) public checkIfWhiteListed() {
+    ) external checkIfWhiteListed() {
         require(
             balances[msg.sender] >= _amount,
             "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
