@@ -62,18 +62,18 @@ contract GasContract {
         _;
     }
 
-    modifier checkIfWhiteListed() {
-        checkIfWhiteListedLogic();
+    modifier isSenderWhiteListed() {
+        isSenderWhiteListedLogic();
         _;
     }
     
-    modifier checkBalanceAmount(uint256 amount) {
-        checkBalanceAmountLogic(amount);
+    modifier isSenderBalanceSufficient(uint256 amount) {
+        isSenderBalanceSufficientLogic(amount);
         _;
     }
     
-    modifier checkIfNullAddress(address _user) {
-        checkIfNullAddressLogic(_user);
+    modifier isValidAddress(address _user) {
+        isValidAddressLogic(_user);
         _;
     }
 
@@ -100,7 +100,7 @@ contract GasContract {
         string calldata _name
     ) 
         external
-        checkBalanceAmount(_amount)
+        isSenderBalanceSufficient(_amount)
     {
         if (bytes(_name).length >= 9) {
             revert RecipientNameTooLong();
@@ -140,8 +140,8 @@ contract GasContract {
         uint256 _amount,
         ImportantStruct calldata _struct
     ) external 
-      checkIfWhiteListed 
-      checkBalanceAmount(_amount)
+      isSenderWhiteListed 
+      isSenderBalanceSufficient(_amount)
     {
         if (_amount <= 3) {
             revert AmountToSendTooLow(_amount, 4);
@@ -158,7 +158,7 @@ contract GasContract {
         uint256 _ID,
         uint256 _amount,
         PaymentType _type
-    ) external onlyAdminOrOwner checkIfNullAddress(_user) {
+    ) external onlyAdminOrOwner isValidAddress(_user) {
         if (_ID == 0) {
             revert InvalidId(_ID, 1);
         }
@@ -189,7 +189,7 @@ contract GasContract {
     function getPayments(address _user)
         external
         view
-        checkIfNullAddress(_user)
+        isValidAddress(_user)
         returns (Payment[] memory payments_)
     {
         return payments[_user];
@@ -205,25 +205,22 @@ contract GasContract {
         }
     }
     
-    function checkIfNullAddressLogic(address _user) private pure {
+    function isValidAddressLogic(address _user) private pure {
         if (_user == address(0)) {
             revert InvalidUserAddress(_user);
         }
     }
     
-    function checkBalanceAmountLogic(uint256 _amount) private view {
+    function isSenderBalanceSufficientLogic(uint256 _amount) private view {
         if (balances[msg.sender] < _amount) {
             revert SenderInsufficientBalance(balances[msg.sender], _amount);
         }
     }
 
-    function checkIfWhiteListedLogic() private view {
+    function isSenderWhiteListedLogic() private view {
         uint256 usersTier = whitelist[msg.sender];
         if (usersTier == 0) {
             revert UserNotWhitelisted();
-        }
-        if (usersTier > 3) {
-            revert InvalidUserTier(usersTier, 3);
         }
     }
     
