@@ -3,7 +3,7 @@ pragma solidity 0.8.0;
 
 import "./Ownable.sol";
 
-contract GasContract is Ownable {
+contract GasContract {
     uint256 constant tradePercent = 12;
     uint256 public immutable totalSupply; // cannot be updated
 
@@ -33,22 +33,22 @@ contract GasContract is Ownable {
     struct Payment {
         PaymentType paymentType;
         uint256 paymentID;
-        bool adminUpdated;
+        uint256 amount;
         string recipientName; // max 8 characters
         address recipient;
         address admin; // administrators address
-        uint256 amount;
+        bool adminUpdated;
     }
 
     struct History {
         uint256 lastUpdate;
-        address updatedBy;
         uint256 blockNumber;
+        address updatedBy;
     }
     struct ImportantStruct {
-        uint256 valueA; // max 3 digits
         uint256 bigValue;
-        uint256 valueB; // max 3 digits
+        uint16 valueA; // max 3 digits
+        uint16 valueB; // max 3 digits
     }
 
     event AddedToWhitelist(address userAddress, uint256 tier);
