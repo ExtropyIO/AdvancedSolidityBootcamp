@@ -19,7 +19,6 @@ contract GasContract {
 
     uint256 private paymentCounter;
     address private contractOwner;
-    bool private wasLastOdd = true;
 
     mapping(address => uint256) public whitelist;
     mapping(address => Payment[]) private payments;
@@ -131,7 +130,6 @@ contract GasContract {
         onlyAdminOrOwner
     {
         whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
-        wasLastOdd = !wasLastOdd;
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
