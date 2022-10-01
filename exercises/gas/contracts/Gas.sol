@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.0;
+pragma solidity 0.8.4;
 
 import "./Ownable.sol";
 
 contract GasContract {
     uint256 constant tradePercent = 12;
+
     uint256 public immutable totalSupply; // cannot be updated
     address[5] public administrators;
 
@@ -14,7 +15,7 @@ contract GasContract {
 
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
-
+    
     mapping(address => uint256) private balances;
     mapping(address => uint256) private isOddWhitelistUser;
     
@@ -53,23 +54,12 @@ contract GasContract {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        require(
-            msg.sender == contractOwner || checkForAdmin(msg.sender),
-            "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-        );
+        onlyAdminOrOwnerLogic();
         _;
     }
 
     modifier checkIfWhiteListed() {
-        uint256 usersTier = whitelist[msg.sender];
-        require(
-            usersTier > 0,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        );
+        checkIfWhiteListedLogic();
         _;
     }
 
@@ -207,15 +197,36 @@ contract GasContract {
         return true;
     }
 
+    function onlyAdminOrOwnerLogic() private {
+        if (msg.sender != contractOwner || !checkForAdmin(msg.sender)) {
+            require(
+                msg.sender == contractOwner || checkForAdmin(msg.sender),
+                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
+            );
+        }
+    }
+
+    function checkIfWhiteListedLogic() private {
+        uint256 usersTier = whitelist[msg.sender];
+        require(
+            usersTier > 0,
+            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
+        );
+        require(
+            usersTier < 4,
+            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
+        );
+    }
+    
     function addHistory(address _updateAddress, bool _tradeMode)
-        internal
+        private
         returns (bool status_, bool tradeMode_)
     {
         paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
         return (true, _tradeMode);
     }
 
-    function checkForAdmin(address _user) internal view returns (bool admin_) {
+    function checkForAdmin(address _user) private view returns (bool admin_) {
         address[5] memory administratorsTemp = administrators;
         for (uint256 i = 0; i < administratorsTemp.length; i++) {
             if (administratorsTemp[i] == _user) {
