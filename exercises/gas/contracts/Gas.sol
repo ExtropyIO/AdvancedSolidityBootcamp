@@ -17,7 +17,6 @@ contract GasContract {
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     mapping(address => uint256) public isOddWhitelistUser;
-    mapping(address => ImportantStruct) public whiteListStruct;
     
     PaymentType constant defaultPayment = PaymentType.Unknown;
     History[] public paymentHistory; // when a payment was updated
@@ -34,7 +33,7 @@ contract GasContract {
         PaymentType paymentType;
         uint256 paymentID;
         uint256 amount;
-        string recipientName; // max 8 characters
+        string recipientName; // max 8 characters   - cannot optimize because of the tests
         address recipient;
         address admin; // administrators address
         bool adminUpdated;
@@ -46,6 +45,7 @@ contract GasContract {
         address updatedBy;
     }
     struct ImportantStruct {
+        // cannot optimize with tight packing because of the test
         uint256 valueA; // max 3 digits
         uint256 bigValue;
         uint256 valueB; // max 3 digits
@@ -111,7 +111,7 @@ contract GasContract {
     }
 
     function addHistory(address _updateAddress, bool _tradeMode)
-        public
+        internal
         returns (bool status_, bool tradeMode_)
     {
         paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
@@ -226,7 +226,6 @@ contract GasContract {
         balances[msg.sender] -= total;
         balances[_recipient] += total;
 
-        whiteListStruct[msg.sender] = ImportantStruct(_struct.valueA, _struct.bigValue, _struct.valueB);
         emit WhiteListTransfer(_recipient);
     }
 }
