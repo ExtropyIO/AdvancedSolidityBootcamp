@@ -46,9 +46,9 @@ contract GasContract {
         address updatedBy;
     }
     struct ImportantStruct {
+        uint256 valueA; // max 3 digits
         uint256 bigValue;
-        uint16 valueA; // max 3 digits
-        uint16 valueB; // max 3 digits
+        uint256 valueB; // max 3 digits
     }
 
     event AddedToWhitelist(address userAddress, uint256 tier);
@@ -143,27 +143,24 @@ contract GasContract {
         uint256 _amount,
         string calldata _name
     ) public returns (bool status_) {
-        address senderOfTx = msg.sender;
         require(
-            balances[senderOfTx] >= _amount,
+            balances[msg.sender] >= _amount,
             "Gas Contract - Transfer function - Sender has insufficient Balance"
         );
         require(
             bytes(_name).length < 9,
             "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
         );
-        balances[senderOfTx] -= _amount;
+        balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
         Payment memory payment;
-        payment.admin = address(0);
-        payment.adminUpdated = false;
         payment.paymentType = PaymentType.BasicPayment;
         payment.recipient = _recipient;
         payment.amount = _amount;
         payment.recipientName = _name;
         payment.paymentID = ++paymentCounter;
-        payments[senderOfTx].push(payment);
+        payments[msg.sender].push(payment);
         bool[] memory status = new bool[](tradePercent);
         for (uint256 i = 0; i < tradePercent; i++) {
             status[i] = true;
@@ -190,8 +187,6 @@ contract GasContract {
             "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
         );
 
-        address senderOfTx = msg.sender;
-
         for (uint256 ii = 0; ii < payments[_user].length; ii++) {
             if (payments[_user][ii].paymentID == _ID) {
                 payments[_user][ii].adminUpdated = true;
@@ -201,7 +196,7 @@ contract GasContract {
                 bool tradingMode = getTradingMode();
                 addHistory(_user, tradingMode);
                 emit PaymentUpdated(
-                    senderOfTx,
+                    msg.sender,
                     _ID,
                     _amount,
                     payments[_user][ii].recipientName
@@ -223,29 +218,21 @@ contract GasContract {
     function whiteTransfer(
         address _recipient,
         uint256 _amount,
-        ImportantStruct memory _struct
+        ImportantStruct calldata _struct
     ) public checkIfWhiteListed() {
-        address senderOfTx = msg.sender;
         require(
-            balances[senderOfTx] >= _amount,
+            balances[msg.sender] >= _amount,
             "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
         );
         require(
             _amount > 3,
             "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
         );
-        balances[senderOfTx] -= _amount;
-        balances[_recipient] += _amount;
-        balances[senderOfTx] += whitelist[senderOfTx];
-        balances[_recipient] -= whitelist[senderOfTx];
+        uint256 total = _amount - whitelist[msg.sender]; 
+        balances[msg.sender] -= total;
+        balances[_recipient] += total;
 
-        whiteListStruct[senderOfTx] = ImportantStruct(0, 0, 0);
-        ImportantStruct storage newImportantStruct = whiteListStruct[
-            senderOfTx
-        ];
-        newImportantStruct.valueA = _struct.valueA;
-        newImportantStruct.bigValue = _struct.bigValue;
-        newImportantStruct.valueB = _struct.valueB;
+        whiteListStruct[msg.sender] = ImportantStruct(_struct.valueA, _struct.bigValue, _struct.valueB);
         emit WhiteListTransfer(_recipient);
     }
 }
