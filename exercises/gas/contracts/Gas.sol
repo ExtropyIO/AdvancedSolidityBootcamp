@@ -71,7 +71,18 @@ contract GasContract {
         checkIfWhiteListedLogic();
         _;
     }
+    
+    modifier checkBalanceAmount(uint256 amount) {
+        checkBalanceAmountLogic(amount);
+        _;
+    }
+    
+    modifier checkIfNullAddress(address _user) {
+        checkIfNullAddressLogic(_user);
+        _;
+    }
 
+    event AddedToWhitelist(address userAddress, uint256 tier);
     event Transfer(address recipient, uint256 amount);
     event PaymentUpdated(
         address admin,
@@ -92,10 +103,10 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         string calldata _name
-    ) external {
-        if (balances[msg.sender] < _amount) {
-            revert SenderInsufficientBalance(balances[msg.sender], _amount);
-        }
+    ) 
+        external
+        checkBalanceAmount(_amount)
+    {
         if (bytes(_name).length >= 9) {
             revert RecipientNameTooLong();
         }
@@ -126,7 +137,6 @@ contract GasContract {
     {
         whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
         wasLastOdd = !wasLastOdd;
-        isOddWhitelistUser[_userAddrs] = wasLastOdd ? 1 : 0;
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
@@ -136,10 +146,8 @@ contract GasContract {
         ImportantStruct calldata _struct
     ) external 
       checkIfWhiteListed 
+      checkBalanceAmount(_amount)
     {
-        if (balances[msg.sender] < _amount) {
-            revert SenderInsufficientBalance(balances[msg.sender], _amount);
-        }
         if (_amount <= 3) {
             revert AmountToSendTooLow(_amount, 4);
         }
@@ -155,15 +163,12 @@ contract GasContract {
         uint256 _ID,
         uint256 _amount,
         PaymentType _type
-    ) external onlyAdminOrOwner {
+    ) external onlyAdminOrOwner checkIfNullAddress(_user) {
         if (_ID == 0) {
             revert InvalidId(_ID, 1);
         }
         if (_amount == 0) {
             revert InvalidAmount(_amount, 1);
-        }
-        if (_user == address(0)) {
-            revert InvalidUserAddress(_user);
         }
 
         Payment[] storage userPayments = payments[_user];
@@ -189,11 +194,9 @@ contract GasContract {
     function getPayments(address _user)
         external
         view
+        checkIfNullAddress(_user)
         returns (Payment[] memory payments_)
     {
-        if (_user == address(0)) {
-            revert InvalidUserAddress(_user);
-        }
         return payments[_user];
     }
     
@@ -204,6 +207,18 @@ contract GasContract {
     function onlyAdminOrOwnerLogic() private view {
         if (msg.sender != contractOwner || !checkForAdmin(msg.sender)) {
             revert Unauthorized();
+        }
+    }
+    
+    function checkIfNullAddressLogic(address _user) private pure {
+        if (_user == address(0)) {
+            revert InvalidUserAddress(_user);
+        }
+    }
+    
+    function checkBalanceAmountLogic(uint256 _amount) private view {
+        if (balances[msg.sender] < _amount) {
+            revert SenderInsufficientBalance(balances[msg.sender], _amount);
         }
     }
 
