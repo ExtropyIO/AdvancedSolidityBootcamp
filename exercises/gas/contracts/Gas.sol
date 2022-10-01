@@ -11,7 +11,7 @@ contract GasContract {
     uint256 private paymentCounter;
     address private contractOwner;
     bool private wasLastOdd = true;
-    
+
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
 
@@ -73,7 +73,6 @@ contract GasContract {
         _;
     }
 
-    event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
     event PaymentUpdated(
         address admin,
@@ -88,45 +87,6 @@ contract GasContract {
         totalSupply = _totalSupply;
         administrators = _admins;
         balances[contractOwner] = _totalSupply;    
-    }
-
-    function checkForAdmin(address _user) internal view returns (bool admin_) {
-        uint256 i;
-        address[5] memory administratorsTemp = administrators;
-        for (i; i < administratorsTemp.length; i++) {
-            if (administratorsTemp[i] == _user) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function balanceOf(address _user) external view returns (uint256 balance_) {
-        return balances[_user];
-    }
-
-    function getTradingMode() public pure returns (bool mode_) {
-        return true;
-    }
-
-    function addHistory(address _updateAddress, bool _tradeMode)
-        internal
-        returns (bool status_, bool tradeMode_)
-    {
-        paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
-        return (true, _tradeMode);
-    }
-
-    function getPayments(address _user)
-        external
-        view
-        returns (Payment[] memory payments_)
-    {
-        require(
-            _user != address(0),
-            "Gas Contract - getPayments function - User must have a valid non zero address"
-        );
-        return payments[_user];
     }
 
     function transfer(
@@ -158,6 +118,40 @@ contract GasContract {
         emit Transfer(_recipient, _amount);
     }
 
+    function balanceOf(address _user) external view returns (uint256 balance_) {
+        return balances[_user];
+    }
+
+    function addToWhitelist(address _userAddrs, uint8 _tier)
+        external
+        onlyAdminOrOwner
+    {
+        whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
+        wasLastOdd = !wasLastOdd;
+        isOddWhitelistUser[_userAddrs] = wasLastOdd ? 1 : 0;
+        emit AddedToWhitelist(_userAddrs, _tier);
+    }
+
+    function whiteTransfer(
+        address _recipient,
+        uint256 _amount,
+        ImportantStruct calldata _struct
+    ) external checkIfWhiteListed() {
+        require(
+            balances[msg.sender] >= _amount,
+            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
+        );
+        require(
+            _amount > 3,
+            "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
+        );
+        uint256 total = _amount - whitelist[msg.sender]; 
+        balances[msg.sender] -= total;
+        balances[_recipient] += total;
+
+        emit WhiteListTransfer(_recipient);
+    }
+    
     function updatePayment(
         address _user,
         uint256 _ID,
@@ -197,33 +191,37 @@ contract GasContract {
         }
     }
 
-    function addToWhitelist(address _userAddrs, uint8 _tier)
+    function getPayments(address _user)
         external
-        onlyAdminOrOwner
+        view
+        returns (Payment[] memory payments_)
     {
-        whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
-        wasLastOdd = !wasLastOdd;
-        isOddWhitelistUser[_userAddrs] = wasLastOdd ? 1 : 0;
-        emit AddedToWhitelist(_userAddrs, _tier);
+        require(
+            _user != address(0),
+            "Gas Contract - getPayments function - User must have a valid non zero address"
+        );
+        return payments[_user];
+    }
+    
+    function getTradingMode() public pure returns (bool mode_) {
+        return true;
     }
 
-    function whiteTransfer(
-        address _recipient,
-        uint256 _amount,
-        ImportantStruct calldata _struct
-    ) external checkIfWhiteListed() {
-        require(
-            balances[msg.sender] >= _amount,
-            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
-        require(
-            _amount > 3,
-            "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
-        );
-        uint256 total = _amount - whitelist[msg.sender]; 
-        balances[msg.sender] -= total;
-        balances[_recipient] += total;
-
-        emit WhiteListTransfer(_recipient);
+    function addHistory(address _updateAddress, bool _tradeMode)
+        internal
+        returns (bool status_, bool tradeMode_)
+    {
+        paymentHistory.push(History(block.timestamp, block.number, _updateAddress));
+        return (true, _tradeMode);
     }
+
+    function checkForAdmin(address _user) internal view returns (bool admin_) {
+        address[5] memory administratorsTemp = administrators;
+        for (uint256 i = 0; i < administratorsTemp.length; i++) {
+            if (administratorsTemp[i] == _user) {
+                return true;
+            }
+        }
+        return false;
+    }    
 }
