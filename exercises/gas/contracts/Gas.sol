@@ -9,11 +9,11 @@ contract GasContract {
     uint256 public immutable totalSupply; // cannot be updated
     address[5] public administrators;
 
-    uint256 private paymentCounter;
     address private contractOwner;
 
     mapping(address => uint256) public whitelist;
     mapping(address => Payment[]) private payments;
+    uint256 private paymentCounter;
     mapping(address => uint256) private balances;
     
     History[] private paymentHistory; // when a payment was updated
