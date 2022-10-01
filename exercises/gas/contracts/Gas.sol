@@ -76,15 +76,15 @@ contract GasContract {
         _;
     }
 
-    event AddedToWhitelist(address userAddress, uint256 tier);
-    event Transfer(address recipient, uint256 amount);
+    event AddedToWhitelist(address indexed userAddress, uint256 indexed tier);
+    event Transfer(address indexed recipient, uint256 indexed amount);
     event PaymentUpdated(
-        address admin,
-        uint256 ID,
-        uint256 amount,
+        address indexed admin,
+        uint256 indexed ID,
+        uint256 indexed amount,
         string recipient
     );
-    event WhiteListTransfer(address indexed);
+    event WhiteListTransfer(address indexed recipient);
 
     constructor(address[5] memory _admins, uint256 _totalSupply) {        
         contractOwner = msg.sender;
