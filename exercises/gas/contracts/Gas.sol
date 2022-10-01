@@ -4,14 +4,6 @@ pragma solidity 0.8.17;
 import "./Ownable.sol";
 
 error Unauthorized();
-error SenderInsufficientBalance(uint256 balance, uint256 minRequired);
-error RecipientNameTooLong();
-error AmountToSendTooLow(uint256 sent, uint256 minRequired);
-error InvalidAmount(uint256 sent, uint256 minRequired);
-error InvalidId(uint256 sent, uint256 minRequired);
-error InvalidUserAddress(address userAddress);
-error UserNotWhitelisted();
-error InvalidUserTier(uint256 tier, uint256 maxAllowedTier);
 
 contract GasContract {
     uint256 public immutable totalSupply; // cannot be updated
@@ -56,26 +48,6 @@ contract GasContract {
         uint256 valueB; // max 3 digits
     }
 
-    modifier onlyAdminOrOwner() {
-        onlyAdminOrOwnerLogic();
-        _;
-    }
-
-    modifier isSenderWhiteListed() {
-        isSenderWhiteListedLogic();
-        _;
-    }
-    
-    modifier isSenderBalanceSufficient(uint256 amount) {
-        isSenderBalanceSufficientLogic(amount);
-        _;
-    }
-    
-    modifier isValidAddress(address _user) {
-        isValidAddressLogic(_user);
-        _;
-    }
-
     event AddedToWhitelist(address indexed userAddress, uint256 indexed tier);
     event Transfer(address indexed recipient, uint256 indexed amount);
     event PaymentUpdated(
@@ -99,12 +71,7 @@ contract GasContract {
         string calldata _name
     ) 
         external
-        isSenderBalanceSufficient(_amount)
     {
-        if (bytes(_name).length >= 9) {
-            revert RecipientNameTooLong();
-        }
-
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
 
@@ -127,7 +94,6 @@ contract GasContract {
 
     function addToWhitelist(address _userAddrs, uint8 _tier)
         external
-        onlyAdminOrOwner
     {
         whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
         emit AddedToWhitelist(_userAddrs, _tier);
@@ -137,13 +103,7 @@ contract GasContract {
         address _recipient,
         uint256 _amount,
         ImportantStruct calldata _struct
-    ) external 
-      isSenderWhiteListed 
-      isSenderBalanceSufficient(_amount)
-    {
-        if (_amount <= 3) {
-            revert AmountToSendTooLow(_amount, 4);
-        }
+    ) external {
         uint256 total = _amount - whitelist[msg.sender]; 
         balances[msg.sender] -= total;
         balances[_recipient] += total;
@@ -156,12 +116,9 @@ contract GasContract {
         uint256 _ID,
         uint256 _amount,
         PaymentType _type
-    ) external onlyAdminOrOwner isValidAddress(_user) {
-        if (_ID == 0) {
-            revert InvalidId(_ID, 1);
-        }
-        if (_amount == 0) {
-            revert InvalidAmount(_amount, 1);
+    ) external {
+        if (msg.sender != contractOwner || !isAdmin(msg.sender)) {
+            revert Unauthorized();
         }
 
         Payment[] storage userPayments = payments[_user];
@@ -188,7 +145,6 @@ contract GasContract {
     function getPayments(address _user)
         external
         view
-        isValidAddress(_user)
         returns (Payment[] memory payments_)
     {
         return payments[_user];
@@ -196,30 +152,6 @@ contract GasContract {
     
     function getTradingMode() public pure returns (bool mode_) {
         return true;
-    }
-
-    function onlyAdminOrOwnerLogic() private view {
-        if (msg.sender != contractOwner || !checkForAdmin(msg.sender)) {
-            revert Unauthorized();
-        }
-    }
-    
-    function isValidAddressLogic(address _user) private pure {
-        if (_user == address(0)) {
-            revert InvalidUserAddress(_user);
-        }
-    }
-    
-    function isSenderBalanceSufficientLogic(uint256 _amount) private view {
-        if (balances[msg.sender] < _amount) {
-            revert SenderInsufficientBalance(balances[msg.sender], _amount);
-        }
-    }
-
-    function isSenderWhiteListedLogic() private view {
-        if (whitelist[msg.sender] == 0) {
-            revert UserNotWhitelisted();
-        }
     }
     
     function addHistory(address _updateAddress, bool _tradeMode)
@@ -230,7 +162,7 @@ contract GasContract {
         return (true, _tradeMode);
     }
 
-    function checkForAdmin(address _user) private view returns (bool admin_) {
+    function isAdmin(address _user) private view returns (bool admin_) {
         address[5] memory administratorsTemp = administrators;
         for (uint256 i = 0; i < 5;) {
             if (administratorsTemp[i] == _user) {
