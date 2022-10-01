@@ -14,8 +14,6 @@ error UserNotWhitelisted();
 error InvalidUserTier(uint256 tier, uint256 maxAllowedTier);
 
 contract GasContract {
-    uint256 constant tradePercent = 12;
-
     uint256 public immutable totalSupply; // cannot be updated
     address[5] public administrators;
 
@@ -26,7 +24,6 @@ contract GasContract {
     mapping(address => uint256) public whitelist;
     mapping(address => Payment[]) private payments;
     mapping(address => uint256) private balances;
-    mapping(address => uint256) private isOddWhitelistUser;
     
     History[] private paymentHistory; // when a payment was updated
     
@@ -59,8 +56,6 @@ contract GasContract {
         uint256 bigValue;
         uint256 valueB; // max 3 digits
     }
-
-    event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
         onlyAdminOrOwnerLogic();
