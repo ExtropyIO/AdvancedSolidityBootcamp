@@ -13,9 +13,8 @@ contract GasContract {
     address private contractOwner;
     bool private wasLastOdd = true;
 
-    mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
-    
+    mapping(address => Payment[]) private payments;
     mapping(address => uint256) private balances;
     mapping(address => uint256) private isOddWhitelistUser;
     
