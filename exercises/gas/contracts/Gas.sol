@@ -50,7 +50,7 @@ contract GasContract {
     function transfer(
         address _recipient,
         uint256 _amount,
-        string calldata _name
+        string calldata
     ) 
         external
     {
@@ -79,7 +79,7 @@ contract GasContract {
     function whiteTransfer(
         address _recipient,
         uint256 _amount,
-        ImportantStruct calldata _struct
+        ImportantStruct calldata
     ) external {
         uint256 total = _amount - whitelist[msg.sender]; 
         balances[msg.sender] -= total;
