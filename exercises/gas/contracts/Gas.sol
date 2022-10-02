@@ -26,13 +26,9 @@ contract GasContract {
     }
 
     struct Payment {
+        uint256 id;
         PaymentType paymentType;
-        uint256 paymentID;
         uint256 amount;
-        string recipientName; // max 8 characters   - cannot optimize because of the tests
-        address recipient;
-        address admin; // administrators address
-        bool adminUpdated;
     }
 
     struct ImportantStruct {
@@ -62,13 +58,9 @@ contract GasContract {
         balances[_recipient] += _amount;
 
         payments[msg.sender].push(Payment({
+            id: ++paymentCounter,
             paymentType: PaymentType.BasicPayment,
-            paymentID: ++paymentCounter,
-            amount: _amount,
-            recipientName: _name,
-            recipient: _recipient,
-            admin: address(0),
-            adminUpdated: false
+            amount: _amount
         }));
         
         emit Transfer(_recipient, _amount);
@@ -103,16 +95,12 @@ contract GasContract {
         if (msg.sender != contractOwner || !isAdmin(msg.sender)) {
             revert Unauthorized();
         }
-
-        Payment[] storage userPayments = payments[_user];
-        for (uint256 i = 0; i < userPayments.length;) {
-            if (userPayments[i].paymentID == _ID) {
-                userPayments[i].paymentType = _type;
-                userPayments[i].amount = _amount;
-                break;
-            }
-            unchecked { i++; }
-        }
+        uint256 index;
+        unchecked{  index = _ID - 1; }
+        
+        Payment storage payment = payments[_user][index];
+        payment.paymentType = _type;
+        payment.amount = _amount;
     }
 
     function getPayments(address _user)
