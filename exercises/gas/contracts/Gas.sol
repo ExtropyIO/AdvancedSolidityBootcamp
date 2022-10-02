@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.0;
+pragma solidity 0.8.4;
 
 import "./Ownable.sol";
 
-contract GasContract is Ownable, Constants {
+error OnlyAdminOrOwner();
+error UserNotWhitelisted();
+
+contract GasContract is Ownable {
     uint256 public totalSupply = 0; // cannot be updated
     uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
     uint256 public tradePercent = 12;
     address public contractOwner;
+    bool public isReady = false;
     uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
+    mapping(address => bool) isAdmin;
     address[5] public administrators;
-    bool public isReady = false;
     enum PaymentType {
         Unknown,
         BasicPayment,
@@ -27,10 +31,10 @@ contract GasContract is Ownable, Constants {
 
     struct Payment {
         PaymentType paymentType;
-        uint256 paymentID;
         bool adminUpdated;
-        string recipientName; // max 8 characters
         address recipient;
+        uint256 paymentID;
+        string recipientName; // max 8 characters
         address admin; // administrators address
         uint256 amount;
     }
@@ -53,34 +57,31 @@ contract GasContract is Ownable, Constants {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        address senderOfTx = msg.sender;
-        bool isAdmin = checkForAdmin(senderOfTx);
-        if (isAdmin) {
-            require(
-                isAdmin,
-                "Gas Contract Only Admin Check-  Caller not admin"
-            );
+        if(msg.sender == contractOwner) {
             _;
-        } else if (senderOfTx == contractOwner) {
-            _;
-        } else {
-            revert(
-                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-            );
+            return;
         }
+        if(isAdmin[msg.sender]) {
+            _;
+            return;
+        }
+        revert OnlyAdminOrOwner();
     }
 
     modifier checkIfWhiteListed(address sender) {
-        address senderOfTx = msg.sender;
         require(
-            senderOfTx == sender,
+            msg.sender == sender,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
         );
-        uint256 usersTier = whitelist[senderOfTx];
+        uint256 usersTier = whitelist[msg.sender];
         require(
             usersTier > 0,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
         );
+        // if (usersTier < 1) {
+        //     bytes32 errorMessage = "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted";
+        //     revert UserNotWhitelisted({errorMessage: errorMessage});
+        // }
         require(
             usersTier < 4,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
@@ -105,19 +106,28 @@ contract GasContract is Ownable, Constants {
         for (uint256 ii = 0; ii < administrators.length; ii++) {
             if (_admins[ii] != address(0)) {
                 administrators[ii] = _admins[ii];
+                isAdmin[_admins[ii]] = true;
                 if (_admins[ii] == contractOwner) {
-                    balances[contractOwner] = totalSupply;
+                    balances[contractOwner] = _totalSupply;
+                    emit supplyChanged(_admins[ii], _totalSupply);
                 } else {
                     balances[_admins[ii]] = 0;
-                }
-                if (_admins[ii] == contractOwner) {
-                    emit supplyChanged(_admins[ii], totalSupply);
-                } else if (_admins[ii] != contractOwner) {
                     emit supplyChanged(_admins[ii], 0);
                 }
             }
         }
     }
+
+    // function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+    //     bytes memory tempEmptyStringTest = bytes(source);
+    //     if (tempEmptyStringTest.length == 0) {
+    //         return 0x0;
+    //     }
+
+    //     assembly {
+    //         result := mload(add(source, 32))
+    //     }
+    // }
 
     function getPaymentHistory()
         public
@@ -127,21 +137,12 @@ contract GasContract is Ownable, Constants {
         return paymentHistory;
     }
 
-    function checkForAdmin(address _user) public view returns (bool) {
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (administrators[ii] == _user) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     function balanceOf(address _user) public view returns (uint256 balance_) {
         uint256 balance = balances[_user];
         return balance;
     }
 
-    function getTradingMode() public view returns (bool mode_) {
+    function getTradingMode() public pure returns (bool mode_) {
         return true;
     }
 
