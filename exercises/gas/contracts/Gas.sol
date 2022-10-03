@@ -53,13 +53,14 @@ contract GasContract {
     {
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
-
-        payments[msg.sender].push(Payment({
-            id: ++paymentCounter,
-            paymentType: PaymentType.BasicPayment,
-            amount: _amount
-        }));
         
+        unchecked{
+            payments[msg.sender].push(Payment({
+                id: ++paymentCounter,
+                paymentType: PaymentType.BasicPayment,
+                amount: _amount
+            }));
+        }
         emit Transfer(_recipient, _amount);
     }
 
