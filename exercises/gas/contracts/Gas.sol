@@ -67,7 +67,31 @@ contract GasContract {
     function addToWhitelist(address _userAddrs, uint8 _tier)
         external
     {
-        whitelist[_userAddrs] = _tier > 3 ? 3 : _tier;
+        assembly {
+            let val := _tier
+            if gt(_tier, 3) {
+                val := 3
+            }
+            
+            // first we compute the slot where we will store the value
+            // we have: keccak256(abi.encode(_user, 1)) where 1 is the slot number for `whitelist`
+            let ptr := mload(0x40)
+
+            // we store the user address at `ptr` address
+            mstore(ptr, _userAddrs)
+
+            // store the slot number for `guesses` on next memory location
+            mstore(add(ptr, 0x20), whitelist.slot)
+
+            // the 2 previous MSTORE are equivalent to abi.encode(_userAddrs, 1)
+
+            // compute the hash of the _userAddrs and whitelist.slot
+            // they are currently stored at `ptr` and use 2 slots (2x 32bytes -> 0x40)
+            let slot := keccak256(ptr, 0x40)
+
+            // store the value at that slot
+            sstore(slot, val)
+        }
     }
 
     function whiteTransfer(
