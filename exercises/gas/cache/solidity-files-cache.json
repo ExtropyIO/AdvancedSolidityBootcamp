@@ -2,15 +2,15 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/dev/courses/encode/solidity-expert/ExpertSolidityBootcamp/exercises/gas/contracts/Gas.sol": {
-      "lastModificationDate": 1664715753965,
-      "contentHash": "0a70d9c8d1ac45d7468f56095570dbdc",
+      "lastModificationDate": 1664800564632,
+      "contentHash": "79e2a3263dbcd02efe0b2058030424cc",
       "sourceName": "contracts/Gas.sol",
       "solcConfig": {
         "version": "0.8.4",
         "settings": {
           "optimizer": {
-            "enabled": false,
-            "runs": 200
+            "enabled": true,
+            "runs": 1000
           },
           "outputSelection": {
             "*": {
@@ -46,8 +46,8 @@
         "version": "0.8.4",
         "settings": {
           "optimizer": {
-            "enabled": false,
-            "runs": 200
+            "enabled": true,
+            "runs": 1000
           },
           "outputSelection": {
             "*": {

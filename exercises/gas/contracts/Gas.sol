@@ -16,45 +16,23 @@ error TierGreaterThan255();
 error AmountSmallerThan3();
 
 contract GasContract is Ownable {
+    uint8 constant MAX_ADMINS = 5;
     uint256 public totalSupply = 0; // cannot be updated
-    uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
-    uint256 public tradePercent = 12;
-    address public contractOwner;
-    bool public isReady = false;
-    uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     mapping(address => bool) isAdmin;
-    address[5] public administrators;
-    enum PaymentType {
-        Unknown,
-        BasicPayment,
-        Refund,
-        Dividend,
-        GroupPayment
-    }
-    PaymentType constant defaultPayment = PaymentType.Unknown;
-
-    History[] public paymentHistory; // when a payment was updated
+    address[MAX_ADMINS] public administrators;
 
     struct Payment {
-        PaymentType paymentType;
+        uint8 paymentType;
         bool adminUpdated;
+        bytes8 recipientName; // max 8 characters
         address recipient;
         uint256 paymentID;
-        string recipientName; // max 8 characters
-        address admin; // administrators address
         uint256 amount;
     }
-
-    struct History {
-        uint256 lastUpdate;
-        address updatedBy;
-        uint256 blockNumber;
-    }
-    uint256 wasLastOdd = 1;
-    mapping(address => uint256) public isOddWhitelistUser;
+    
     struct ImportantStruct {
         uint256 valueA; // max 3 digits
         uint256 bigValue;
@@ -66,7 +44,7 @@ contract GasContract is Ownable {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        if(msg.sender == contractOwner) {
+        if(msg.sender == owner()) {
             _;
             return;
         }
@@ -93,39 +71,25 @@ contract GasContract is Ownable {
 
     event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
-    event PaymentUpdated(
-        address admin,
-        uint256 ID,
-        uint256 amount,
-        string recipient
-    );
-    event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
+        for (uint256 ii = 0; ii < MAX_ADMINS;) {
             if (_admins[ii] != address(0)) {
-                administrators[ii] = _admins[ii];
-                isAdmin[_admins[ii]] = true;
-                if (_admins[ii] == contractOwner) {
-                    balances[contractOwner] = _totalSupply;
-                    emit supplyChanged(_admins[ii], _totalSupply);
+                address admin = _admins[ii];
+                administrators[ii] = admin;
+                isAdmin[admin] = true;
+                if (admin == msg.sender) {
+                    balances[msg.sender] = _totalSupply;
+                    emit supplyChanged(admin, _totalSupply);
                 } else {
-                    balances[_admins[ii]] = 0;
-                    emit supplyChanged(_admins[ii], 0);
+                    balances[admin] = 0;
+                    emit supplyChanged(admin, 0);
                 }
             }
+            unchecked{ ii++; }
         }
-    }
-
-    function getPaymentHistory()
-        public
-        payable
-        returns (History[] memory paymentHistory_)
-    {
-        return paymentHistory;
     }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
@@ -135,18 +99,6 @@ contract GasContract is Ownable {
 
     function getTradingMode() public pure returns (bool mode_) {
         return true;
-    }
-
-    function addHistory(address _updateAddress, bool _tradeMode)
-        public
-        returns (bool status_, bool tradeMode_)
-    {
-        History memory history;
-        history.blockNumber = block.number;
-        history.lastUpdate = block.timestamp;
-        history.updatedBy = _updateAddress;
-        paymentHistory.push(history);
-        return (tradePercent > 0, _tradeMode);
     }
 
     function getPayments(address _user)
@@ -160,38 +112,63 @@ contract GasContract is Ownable {
         return payments[_user];
     }
 
+    function convertBytesToBytes8(bytes memory inBytes) private pure returns (bytes8 outBytes8) {
+        if (inBytes.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            outBytes8 := mload(add(inBytes, 32))
+        }
+    }
+    
     function transfer(
         address _recipient,
         uint256 _amount,
         string calldata _name
     ) public returns (bool status_) {
-        address senderOfTx = msg.sender;
-        if (balances[senderOfTx] < _amount) {
+        uint256 senderBalance = balances[msg.sender];
+
+        if (senderBalance < _amount) {
             revert InsufficientBalance();
         }
+        // This could also be assert(bytes(_name).length < 9)
         if (bytes(_name).length > 8) {
             revert RecipientNameTooLong();
         }
-        balances[senderOfTx] -= _amount;
+
+        balances[msg.sender] = senderBalance - _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
-        Payment memory payment;
-        payment.admin = address(0);
-        payment.adminUpdated = false;
-        payment.paymentType = PaymentType.BasicPayment;
-        payment.recipient = _recipient;
-        payment.amount = _amount;
-        payment.recipientName = _name;
-        payment.paymentID = ++paymentCounter;
-        payments[senderOfTx].push(payment);
-        return (tradePercent > 0);
+
+        Payment[] storage currentPayments = payments[msg.sender];
+        uint256 paymentID;
+        if (currentPayments.length > 0) {
+            Payment storage lastPayment = currentPayments[currentPayments.length - 1];
+            paymentID = lastPayment.paymentID + 1;
+
+        } else {
+            paymentID = 1;
+        }
+
+        Payment memory payment = Payment(
+            1,
+            false, 
+            convertBytesToBytes8(bytes(_name)),
+            _recipient,
+            paymentID, 
+            _amount
+        );
+        payments[msg.sender].push(payment);
+
+        return true;
     }
 
     function updatePayment(
         address _user,
         uint256 _ID,
         uint256 _amount,
-        PaymentType _type
+        uint8 _type
     ) public onlyAdminOrOwner {
         if (_ID < 1) {
             revert IdIsZero();
@@ -203,20 +180,13 @@ contract GasContract is Ownable {
             revert IsZeroAddress();
         }
 
-        for (uint256 ii = 0; ii < payments[_user].length; ii++) {
+        for (uint256 ii = 0; ii < payments[_user].length;) {
             if (payments[_user][ii].paymentID == _ID) {
                 payments[_user][ii].adminUpdated = true;
-                payments[_user][ii].admin = _user;
-                payments[_user][ii].paymentType = _type;
+                payments[_user][ii].paymentType = uint8(_type);
                 payments[_user][ii].amount = _amount;
-                addHistory(_user, true);
-                emit PaymentUpdated(
-                    msg.sender,
-                    _ID,
-                    _amount,
-                    payments[_user][ii].recipientName
-                );
             }
+            unchecked{ ii++; }
         }
     }
 
@@ -224,29 +194,24 @@ contract GasContract is Ownable {
         public
         onlyAdminOrOwner
     {
-        if (_tier > 255) {
-            revert TierGreaterThan255();
-        }
-        whitelist[_userAddrs] = _tier;
-        if (_tier > 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 3;
-        } else if (_tier == 1) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 1;
-        } else if (_tier > 0 && _tier < 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 2;
-        }
-        uint256 wasLastAddedOdd = wasLastOdd;
-        if (wasLastAddedOdd == 1) {
-            wasLastOdd = 0;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        } else if (wasLastAddedOdd == 0) {
-            wasLastOdd = 1;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        } else {
-            revert("Contract hacked, imposible, call help");
+        // if (_tier > 255) {
+        //     revert TierGreaterThan255();
+        // }
+        // whitelist[_userAddrs] = _tier;
+        // if (_tier > 3) {
+        //     whitelist[_userAddrs] = 3;
+        // } else {
+        //     whitelist[_userAddrs] = _tier;
+        // }
+        assembly {
+            // assert(_tier < 255);
+            if lt(_tier, 255) {
+                // whitelist[_userAddrs] = _tier;
+                mstore(0, _userAddrs)
+                mstore(32, whitelist.slot)
+                let whitelistMappingPos := keccak256(0, 64)
+                sstore(whitelistMappingPos, _tier)
+            }
         }
         emit AddedToWhitelist(_userAddrs, _tier);
     }
@@ -256,25 +221,24 @@ contract GasContract is Ownable {
         uint256 _amount,
         ImportantStruct memory _struct
     ) public checkIfWhiteListed(msg.sender) {
-        address senderOfTx = msg.sender;
-        if (balances[senderOfTx] < _amount) {
+        uint256 senderBalance = balances[msg.sender];
+        if (senderBalance < _amount) {
             revert InsufficientBalance();
         }
         if (_amount <= 3) {
             revert AmountSmallerThan3();
         }
-        balances[senderOfTx] -= _amount;
-        balances[_recipient] += _amount;
-        balances[senderOfTx] += whitelist[senderOfTx];
-        balances[_recipient] -= whitelist[senderOfTx];
+        uint256 whitelistSenderAmount = whitelist[msg.sender];
+        uint256 tempBalance = senderBalance;
+        tempBalance -= _amount;
+        tempBalance += whitelistSenderAmount;
+        balances[msg.sender] = tempBalance;
 
-        whiteListStruct[senderOfTx] = ImportantStruct(0, 0, 0);
-        ImportantStruct storage newImportantStruct = whiteListStruct[
-            senderOfTx
-        ];
-        newImportantStruct.valueA = _struct.valueA;
-        newImportantStruct.bigValue = _struct.bigValue;
-        newImportantStruct.valueB = _struct.valueB;
-        emit WhiteListTransfer(_recipient);
+        tempBalance = balances[_recipient];
+        tempBalance += _amount;
+        tempBalance -= whitelistSenderAmount;
+        balances[_recipient] = tempBalance;
+
+        whiteListStruct[msg.sender] = _struct;
     }
 }
