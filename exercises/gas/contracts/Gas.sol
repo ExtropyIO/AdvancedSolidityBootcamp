@@ -8,14 +8,11 @@ error Unauthorized();
 contract GasContract {
     uint256 public immutable totalSupply; // cannot be updated
     address[5] public administrators;
-
-    address private contractOwner;
-
     mapping(address => uint256) public whitelist;
-    mapping(address => Payment[]) private payments;
-    uint256 private paymentCounter;
-
-    mapping(address => uint256) private balances;
+    mapping(address => uint256) balances;
+    mapping(address => Payment[]) payments;
+    uint256 paymentCounter;
+    address contractOwner;
     
     enum PaymentType {
         Unknown,
@@ -92,7 +89,7 @@ contract GasContract {
         uint256 _amount,
         PaymentType _type
     ) external {
-        if (msg.sender != contractOwner || !isAdmin(msg.sender)) {
+        if (msg.sender != contractOwner) {
             revert Unauthorized();
         }
         uint256 index;
@@ -114,15 +111,4 @@ contract GasContract {
     function getTradingMode() external pure returns (bool mode_) {
         return true;
     }
-
-    function isAdmin(address _user) private view returns (bool admin_) {
-        address[5] memory administratorsTemp = administrators;
-        for (uint256 i = 0; i < 5;) {
-            if (administratorsTemp[i] == _user) {
-                return true;
-            }
-            unchecked{ i++; }
-        }
-        return false;
-    }    
 }
