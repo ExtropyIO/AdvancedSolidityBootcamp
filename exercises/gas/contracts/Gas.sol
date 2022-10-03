@@ -12,7 +12,7 @@ contract GasContract {
     mapping(address => uint256) balances;
     mapping(address => Payment[]) payments;
     uint256 paymentCounter;
-    address contractOwner;
+    address immutable contractOwner;
     
     enum PaymentType {
         Unknown,
