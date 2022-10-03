@@ -119,12 +119,12 @@ contract GasContract {
     function getPayments(address _user)
         external
         view
-        returns (Payment[] memory payments_)
+        returns (Payment[] memory)
     {
         return payments[_user];
     }
     
-    function getTradingMode() external pure returns (bool mode_) {
+    function getTradingMode() external pure returns (bool) {
         return true;
     }
 }
