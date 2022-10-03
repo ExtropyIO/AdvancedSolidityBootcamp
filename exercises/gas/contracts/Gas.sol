@@ -9,7 +9,7 @@ contract GasContract {
     uint256 public immutable totalSupply; // cannot be updated
     address[5] public administrators;
     mapping(address => uint256) public whitelist;
-    mapping(address => uint256) balances;
+    mapping(address => uint256) public balanceOf;
     mapping(address => Payment[]) payments;
     uint256 paymentCounter;
     address immutable contractOwner;
@@ -41,7 +41,7 @@ contract GasContract {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
         administrators = _admins;
-        balances[contractOwner] = _totalSupply;    
+        balanceOf[contractOwner] = _totalSupply;    
     }
 
     function transfer(
@@ -51,8 +51,8 @@ contract GasContract {
     ) 
         external
     {
-        balances[msg.sender] -= _amount;
-        balances[_recipient] += _amount;
+        balanceOf[msg.sender] -= _amount;
+        balanceOf[_recipient] += _amount;
         
         unchecked{
             payments[msg.sender].push(Payment({
@@ -62,10 +62,6 @@ contract GasContract {
             }));
         }
         emit Transfer(_recipient, _amount);
-    }
-
-    function balanceOf(address _user) external view returns (uint256 balance_) {
-        return balances[_user];
     }
 
     function addToWhitelist(address _userAddrs, uint8 _tier)
@@ -80,8 +76,8 @@ contract GasContract {
         ImportantStruct calldata
     ) external {
         uint256 total = _amount - whitelist[msg.sender]; 
-        balances[msg.sender] -= total;
-        balances[_recipient] += total;
+        balanceOf[msg.sender] -= total;
+        balanceOf[_recipient] += total;
     }
     
     function updatePayment(
