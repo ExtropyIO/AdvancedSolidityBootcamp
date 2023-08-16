@@ -16,9 +16,11 @@ contract BitMasking {
 
     // TODO:
     // 1. Read slot b and return its value 0xbeef
+
+    // SOLVED:
     function readBeef() external view returns (bytes32 ret) {
         assembly {
-            // start here: Solution provided
+            // Solution: shift right slot `0`, then and masking with 0xffff
             let value := sload(b.slot)
             let offset := b.offset
             let shifted := shr(mul(offset, 8), value)
@@ -31,6 +33,7 @@ contract BitMasking {
     // 2. Store 0xc0ffee0000d15ea5 in d
     // Note: use yul, bit shifting and bit masking only
 
+    // FIXME: Challenge 1
     function foodCode() external {
         assembly {
             let slot0 := sload(0)
@@ -40,7 +43,9 @@ contract BitMasking {
 
     // TODO:
     // 1. Modify the first two bytes of e to be `0xce00`
-    // 2. Add 0xfaceb00c to fill the 9th - 12th byte of variable e inplace
+    // 2. Add 0xfaceb00c on fill the 9th to 12th byte in variable e inplace
+
+    // FIXME: Challenge 2
     function facebooc() external {
         assembly {
             let slot0 := sload(0)
@@ -53,6 +58,8 @@ contract BitMasking {
     // 2. For d, mask the word `fee`, then add `d` after `fee` on the next byte
     // 3. For b, mask the word `beef` that appears once, and dicard all other packed bytes
     // Update all variables, such that the value in slot 0 returns 0xbeef000000000000bee0000feed00000000000000000beef0000
+
+    // FIXME: Challenge 3
     function beefBeeFeedBeef() external view {
         assembly {
             let slot0 := sload(0)
