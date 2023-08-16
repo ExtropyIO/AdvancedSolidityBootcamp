@@ -15,7 +15,7 @@ contract BitMasking {
     }
 
     // TODO:
-    // 1. Read slot b and return its value 0xbeef
+    // 1. Read variable b and return its value 0xbeef
 
     // SOLVED:
     function readBeef() external view returns (bytes32 ret) {
@@ -29,8 +29,8 @@ contract BitMasking {
     }
 
     // TODO:
-    // 1. Store 0xf00dc0de in c
-    // 2. Store 0xc0ffee0000d15ea5 in d
+    // 1. Store 0xf00dc0de in variable c
+    // 2. Store 0xc0ffee0000d15ea5 in variable d
     // Note: use yul, bit shifting and bit masking only
 
     // FIXME: Challenge 1
@@ -42,8 +42,8 @@ contract BitMasking {
     }
 
     // TODO:
-    // 1. Modify the first two bytes of e to be `0xce00`
-    // 2. Add 0xfaceb00c on fill the 9th to 12th byte in variable e inplace
+    // 1. Modify the first two bytes of variable e to be `0xce00`
+    // 2. Put 0xfaceb00c from the 9th to 12th byte of variable e inplace
 
     // FIXME: Challenge 2
     function facebooc() external {
@@ -54,10 +54,10 @@ contract BitMasking {
     }
 
     // TODO:
-    // 1. For e, mask the word `beef` and `bee` and discard all other bytes
-    // 2. For d, mask the word `fee`, then add `d` after `fee` on the next byte
-    // 3. For b, mask the word `beef` that appears once, and dicard all other packed bytes
-    // Update all variables, such that the value in slot 0 returns 0xbeef000000000000bee0000feed00000000000000000beef0000
+    // 1. For variable e, modify the bytes the words `beef` and `bee` inplace, discard all other bytes to with value zero
+    // 2. For variable d, mask the word `fee`, add 1/2 byte `d` to `fee` so that it reads `feed`
+    // 3. For variable b, mask the word `beef` that appears only once, and dicard all other packed bytes
+    // NOTE: If all variable are updated correctly, slot 0 should return 0xbeef000000000000bee0000feed00000000000000000beef0000
 
     // FIXME: Challenge 3
     function beefBeeFeedBeef() external view {
