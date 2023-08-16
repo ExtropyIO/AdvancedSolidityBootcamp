@@ -1,0 +1,3 @@
+[submodule "exercises/bitMasking/lib/forge-std"]
+	path = exercises/bitMasking/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
