@@ -18,7 +18,11 @@ contract BitMasking {
     // 1. Read slot b and return its value 0xbeef
     function readBeef() external view returns (bytes32 ret) {
         assembly {
-            // start here
+            // start here: Solution provided
+            let value := sload(b.slot)
+            let offset := b.offset
+            let shifted := shr(mul(offset, 8), value)
+            ret := and(0xffff, shifted)
         }
     }
 
