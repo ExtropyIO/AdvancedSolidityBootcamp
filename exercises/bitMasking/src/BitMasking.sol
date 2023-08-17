@@ -60,7 +60,9 @@ contract BitMasking {
     // NOTE: If all variable are updated correctly, slot 0 should return 0xbeef000000000000bee0000feed00000000000000000beef0000
 
     // FIXME: Challenge 3
-    function beefBeeFeedBeef() external view {
+    function beefBeeFeedBeef() external {
+        this.foodCode();
+        this.facebooc();
         assembly {
             let slot0 := sload(0)
             // start here
