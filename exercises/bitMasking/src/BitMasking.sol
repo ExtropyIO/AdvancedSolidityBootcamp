@@ -56,7 +56,6 @@ contract BitMasking {
     // TODO:
     // 1. For variable e, leave the byte words `beef` and `bee` inplace, discard all other non-zero bytes words
     // 2. For variable d, mask the word `fee`, add 1/2 byte `d` to `fee` so that it reads `feed`
-    // 3. For variable b, mask the word `beef` that appears only once, and dicard all other packed bytes
     // NOTE: If all variable are updated correctly, slot 0 should return 0xbeef000000000000bee0000feed00000000000000000beef0000
 
     // FIXME: Challenge 3
